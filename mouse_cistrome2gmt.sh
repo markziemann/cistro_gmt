@@ -54,14 +54,14 @@ fi
 GTFURL=ftp://ftp.ensembl.org/pub/release-86/gtf/mus_musculus/Mus_musculus.GRCm38.86.gtf.gz
 GTF=`basename $GTFURL`
 TSSBED=`echo $GTF | sed 's/.gtf.gz/.tss.bed/'`
-SIZE_RANGE='2500,1000,500'
+SIZE_RANGE='2500'
 GNAMES=$(basename $GTF .gtf.gz).gnames.txt
 #this encode stuff will have to be modified
-METADATA="TF_mouse_data_information.txt"
+METADATA="mouse_factor_full_QC.txt"
 METADATA_SUMMARY=metadata_summary.tsv
 URLLIST=files.txt
 
-NUMRANGE='500,1000'
+NUMRANGE='500'
 UPPER_LIMIT='5000'
 NRCPU=`nproc`
 
@@ -99,13 +99,14 @@ echo "intersect peaks with TSS"
 
 map_pk(){
 BEDIN=$1
+CODENUM=$(echo $(basename $BEDIN) | cut -d '_' -f1)
 METADATA=$2
 TSS=$3
 DIST=$4
 MAX_GENES=$5
 
 OUT=$(echo $BEDIN | sed 's/narrowPeak.bed/narrowPeak.gmt/')
-NAME=$(grep -w $(basename $BEDIN) $METADATA | cut -f7)_$(grep -w $(basename $BEDIN) $METADATA | cut -f4)_$(grep -w $(basename $BEDIN) $METADATA | cut -f2)
+NAME=$(grep -w ^$CODENUM $METADATA | cut -f4)_$(grep -w ^$CODENUM $METADATA | cut -f5)_$(grep -w ^$CODENUM $METADATA | cut -f6)_$CODENUM
 NAME=$(echo $NAME | sed 's#/#_#g')
 
 bedtools intersect -wb \
@@ -117,5 +118,5 @@ bedtools intersect -wb \
 | tr '\n' '\t' | sed "s#^#${NAME}\tCistromeDB\t#" | sed 's/$/\n/'
 }
 export -f map_pk
-parallel map_pk ::: TF_mouse/*narrowPeak.bed ::: TF_mouse_data_information.txt ::: $TSSBED ::: 1000 ::: 1000 \
+parallel map_pk ::: TF_mouse/*narrowPeak.bed ::: mouse_factor_full_QC.txt ::: $TSSBED ::: 1000 ::: 1000 \
 | sed 's/ //g' > MouseTfPeaks.gmt
